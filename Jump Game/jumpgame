@@ -1,0 +1,117 @@
+import pygame
+import sys
+import random
+
+# Initialize Pygame
+pygame.init()
+
+# Constants
+WIDTH, HEIGHT = 800, 600
+FPS = 60
+GROUND_HEIGHT = 100
+
+# Colors
+BLUE = (135, 206, 250)
+BROWN = (139, 69, 19)
+WHITE = (255, 255, 255)
+BLACK = (0,0,0)
+
+# Player settings
+player_width, player_height = 35, 50
+player_x = 100
+player_y = HEIGHT - GROUND_HEIGHT - player_height
+player_jump = False
+player_jump_count = 10
+
+# Cactus settings
+cactus_width, cactus_height = 20, 35
+cactus_speed = 5
+cacti = []
+
+# Set up the game window
+window = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Jumping Man Game")
+clock = pygame.time.Clock()
+
+# Function to draw the player
+def draw_player(x, y):
+    pygame.draw.rect(window, WHITE, (x, y, player_width, player_height))
+
+# Function to draw the ground
+def draw_ground():
+    pygame.draw.rect(window, BROWN, (0, HEIGHT - GROUND_HEIGHT, WIDTH, GROUND_HEIGHT))
+
+# Function to draw a cactus
+def draw_cactus(x, y):
+    pygame.draw.rect(window, BLACK, (x, y, cactus_width, cactus_height))
+
+# Function to display text on the screen
+def display_text(text, size, color, x, y):
+    font = pygame.font.Font(None, size)
+    text_surface = font.render(text, True, color)
+    text_rect = text_surface.get_rect(center=(x, y))
+    window.blit(text_surface, text_rect)
+
+# Function to reset the game
+def reset_game():
+    global player_y, player_jump, cacti
+    player_y = HEIGHT - GROUND_HEIGHT - player_height
+    player_jump = False
+    cacti = []
+
+# Main game loop
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE and not player_jump:
+                player_jump = True
+
+            if event.key == pygame.K_r:
+                reset_game()
+
+    # Update player position
+    if player_jump:
+        if player_jump_count >= -10:
+            neg = 1
+            if player_jump_count < 0:
+                neg = -1
+            player_y -= (player_jump_count ** 2) * 0.5 * neg
+            player_jump_count -= 1
+        else:
+            player_jump = False
+            player_jump_count = 10
+
+    # Update cactus positions
+    for cactus in cacti:
+        cactus[0] -= cactus_speed
+
+    # Spawn new cactus
+    if random.randint(0, 100) < 3:
+        cacti.append([WIDTH, HEIGHT - GROUND_HEIGHT - cactus_height])
+
+    # Check for collisions
+    for cactus in cacti:
+        if (
+            player_x < cactus[0] + cactus_width
+            and player_x + player_width > cactus[0]
+            and player_y < cactus[1] + cactus_height
+            and player_y + player_height > cactus[1]
+        ):
+            display_text("Game Over! Press 'R' to restart.", 36, WHITE, WIDTH // 2, HEIGHT // 2)
+            pygame.display.flip()
+            pygame.time.delay(5000)
+            reset_game()
+
+    # Draw everything
+    window.fill(BLUE)
+    draw_ground()
+    draw_player(player_x, player_y)
+    for cactus in cacti:
+        draw_cactus(cactus[0], cactus[1])
+
+    pygame.display.flip()
+    clock.tick(FPS)
